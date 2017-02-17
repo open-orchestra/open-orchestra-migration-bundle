@@ -19,6 +19,8 @@ class OpenOrchestraMigrationExtension extends Extension
     public function load(array $configs, ContainerBuilder $container)
     {
         $configuration = new Configuration();
-        $this->processConfiguration($configuration, $configs);
+        $config = $this->processConfiguration($configuration, $configs);
+
+        $container->setParameter('open_orchestra_migration.node_configuration', $config['node_configuration']);
     }
 }
