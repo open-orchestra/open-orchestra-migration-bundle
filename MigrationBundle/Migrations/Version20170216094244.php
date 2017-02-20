@@ -42,22 +42,22 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
 
         $this->write(' + Adding the template');
         $configTemplate = $configNodeMigration['template_configuration'];
-        $this->upTemplate($db, $configTemplate);
+        $this->checkExecute($this->upTemplate($db, $configTemplate));
 
         $this->write(' + Adding the version name');
-        $this->upVersionName($db);
+        $this->checkExecute($this->upVersionName($db));
 
         $this->write(' + Change status of published node not currentlyPublished in offline status');
-        $this->upPublishedNode($db);
+        $this->checkExecute($this->upPublishedNode($db));
 
         $this->write(' + Update storage blocks and areas');
-        $this->upAreasNode($db, $templateSetConfig);
+        $this->checkExecute($this->upAreasNode($db, $templateSetConfig));
 
         $this->write(' + Removing unused properties (boLabel, templateId, currentlyPublished, status.fromRoles, status.toRoles, metaKewyords, blocks, rootArea)');
-        $this->upRemoveUnusedProperties($db);
+        $this->checkExecute($this->upRemoveUnusedProperties($db));
 
         $this->write(' + Removing transverse node');
-        $this->upRemoveTransverseNode($db);
+        $this->checkExecute($this->upRemoveTransverseNode($db));
 
         $this->write(' + Update path and position of error nodes');
         $this->upPathErrorNode($db);
@@ -91,7 +91,6 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
         }
 
         $referenceManager = $this->container->get('open_orchestra_backoffice.reference.manager');
-
         $this->write(' + Update use references of nodes');
         $this->updateUseReferenceEntity(Node::class, $dm, $referenceManager);
 
@@ -109,7 +108,7 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
         $limit = 20;
         $countEntities = $dm->createQueryBuilder($entityClass)->getQuery()->count();
         for ($skip = 0; $skip < $countEntities; $skip += $limit) {
-            $entities = $dm->createQueryBuilder(Node::class)
+            $entities = $dm->createQueryBuilder($entityClass)
                         ->skip($skip)
                         ->limit($limit)
                         ->getQuery()->execute();
@@ -222,14 +221,15 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
         return $qb->getQuery()->execute()->toArray();
     }
 
-
     /**
      * @param Database $db
      * @param array    $templateSetConfig
+     *
+     * @return array
      */
     protected function upAreasNode(Database $db, array $templateSetConfig)
     {
-        $db->execute(
+        return $db->execute(
             $this->getFindAreaFunction().'
 
             '.$this->getBlockRefIdFunction().'
@@ -329,7 +329,7 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
                 var area = { "blocks": [] };
                 if (typeof rootArea !== "undefined") {
                     var oldArea = findArea(rootArea, areaId);
-                    if (typeof oldArea.blocks != "undefined") {
+                    if (oldArea !== null && typeof oldArea.blocks != "undefined") {
                         var blocks = oldArea.blocks;
                         for (var i in blocks) {
                             var blockPosition = blocks[i];
@@ -409,10 +409,12 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
 
     /**
      * @param Database $db
+     *
+     * @return array
      */
     protected function upPublishedNode(Database $db)
     {
-        $db->execute('
+        return $db->execute('
             var offlineStatus = db.status.findOne({"autoUnpublishToState": true});
             if (typeof offlineStatus !== "undefined") {
                 db.node.find({"currentlyPublished": false, "status.published": true}).forEach(function(item) {
@@ -425,10 +427,12 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
 
     /**
      * @param Database $db
+     *
+     * @return array
      */
     protected function upVersionName(Database $db)
     {
-        $db->execute('
+        return $db->execute('
             db.node.find().forEach(function(item) {
                 var date = item.createdAt.getUTCFullYear()+"-"+item.createdAt.getUTCMonth()+"-"+item.createdAt.getUTCDate();
                 var time = item.createdAt.getHours()+":"+item.createdAt.getMinutes()+":"+item.createdAt.getSeconds();
@@ -442,10 +446,12 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
     /**
      * @param Database $db
      * @param array    $configTemplate
+     *
+     * @return array
      */
     protected function upTemplate(Database $db, array $configTemplate)
     {
-        $db->execute('
+        return $db->execute('
             var configTemplate = '.json_encode($configTemplate).';
             db.node.find().forEach(function(item) {
                 var template = configTemplate.defaultTemplate;
@@ -465,10 +471,12 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
 
     /**
      * @param Database $db
+     *
+     * @return array
      */
     protected function upPathErrorNode(Database $db)
     {
-        $db->execute('
+        return $db->execute('
             db.node.find({"nodeType": "error"}).forEach(function(item) {
                 item.parentId = "-";
                 item.path = item.nodeId;
@@ -481,10 +489,12 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
 
    /**
      * @param Database $db
+     *
+     * @return array
      */
     protected function upRemoveUnusedProperties(Database $db)
     {
-        $db->execute('
+        return $db->execute('
             db.node.find().forEach(function(item) {
                  if (item.boLabel) {
                     delete item.boLabel;
@@ -518,10 +528,12 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
 
    /**
      * @param Database $db
+     *
+     * @return array
      */
     protected function upRemoveTransverseNode(Database $db)
     {
-        $db->execute('
+        return $db->execute('
             db.node.remove({"nodeType": "general"});
         ');
     }
@@ -529,14 +541,7 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
     /**
      * @param Database $db
      */
-   public function down(Database $db)
-   {
-        $db->execute('
-            db.node.find().forEach(function(item) {
-                 db.node.update({ _id: item._id }, item);
-            });
-        ');
-   }
+   public function down(Database $db){}
 
     /**
      * Check requirements for the migration
@@ -555,6 +560,15 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
             $this->abortIf((null === $site->getTemplateSet()), "Site ".$site->getSiteId(). "require template set");
             $this->abortIf((null === $site->getTemplateNodeRoot()), "Site ".$site->getSiteId(). "require template set");
         }
+    }
+
+    /**
+     * @param array $res
+     */
+    protected function checkExecute(array $res)
+    {
+        $message = isset($res["errmsg"]) ? $res["errmsg"] : '';
+        $this->abortIf((isset($res['ok']) && $res['ok'] == 0), $message);
     }
 
 }
