@@ -36,6 +36,10 @@ class Configuration implements ConfigurationInterface
                             ->end()
                         ->end()
                     ->end()
+                    ->arrayNode('error_node_ids')
+                        ->defaultValue(array('errorPage404', 'errorPage503'))
+                        ->prototype('scalar')->end()
+                    ->end()
                 ->end()
             ->end();
 

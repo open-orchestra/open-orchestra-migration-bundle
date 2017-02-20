@@ -4,6 +4,14 @@ namespace OpenOrchestra\MigrationBundle\Migrations;
 
 use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
+use Doctrine\ODM\MongoDB\DocumentManager;
+use OpenOrchestra\Backoffice\Reference\ReferenceManager;
+use OpenOrchestra\ModelBundle\Document\Block;
+use OpenOrchestra\ModelBundle\Document\Node;
+use OpenOrchestra\ModelInterface\Model\NodeInterface;
+use OpenOrchestra\ModelInterface\Model\SiteInterface;
+use OpenOrchestra\ModelInterface\Model\StatusInterface;
+use OpenOrchestra\ModelInterface\Repository\NodeRepositoryInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
@@ -27,6 +35,8 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
      */
     public function up(Database $db)
     {
+        $this->checkRequirements();
+
         $configNodeMigration = $this->container->getParameter('open_orchestra_migration.node_configuration');
         $templateSetConfig = $this->container->get('open_orchestra_backoffice.manager.template')->getTemplateSetParameters();
 
@@ -51,6 +61,165 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
 
         $this->write(' + Update path and position of error nodes');
         $this->upPathErrorNode($db);
+
+        $sites = $this->container->get('open_orchestra_model.repository.site')->findByDeleted(false);
+        $dm = $this->container->get('doctrine.odm.mongodb.document_manager');
+        $nodeRepository = $this->container->get('open_orchestra_model.repository.node');
+
+        /** @var SiteInterface $site */
+        foreach ($sites as $site) {
+            $siteId = $site->getSiteId();
+            $nodeIds = $this->getNodeIdsInSite($siteId, $dm);
+            $languages = $site->getLanguages();
+
+            $this->write(' + Create missing node language of site '. $siteId);
+            foreach ($nodeIds as $nodeId) {
+                $missingLanguages = $this->searchMissingNodeLanguage($nodeId, $languages, $siteId, $nodeRepository);
+                if (count($missingLanguages) > 0) {
+                    $this->createMissingNodeLanguage($missingLanguages, $nodeId, $siteId, $nodeRepository, $dm);
+                }
+            }
+
+            $this->write(' + Create missing error language of site '. $siteId);
+            $errorNodeIds = $configNodeMigration['error_node_ids'];
+            $status = $this->container->get('open_orchestra_model.repository.status')->findOneByTranslationState();
+            foreach ($errorNodeIds as $errorNodeId) {
+                if (0 === $this->countErrorNode($errorNodeId, $siteId, $dm)) {
+                    $this->createErrorNode($errorNodeId, $siteId, $languages, $site->getTemplateNodeRoot(), $status, $dm);
+                }
+            }
+        }
+
+        $referenceManager = $this->container->get('open_orchestra_backoffice.reference.manager');
+
+        $this->write(' + Update use references of nodes');
+        $this->updateUseReferenceEntity(Node::class, $dm, $referenceManager);
+
+        $this->write(' + Update use references of blocks');
+        $this->updateUseReferenceEntity(Block::class, $dm, $referenceManager);
+    }
+
+    /**
+     * @param String           $entityClass
+     * @param DocumentManager  $dm
+     * @param ReferenceManager $referenceManager
+     */
+    protected function updateUseReferenceEntity($entityClass, DocumentManager $dm, ReferenceManager $referenceManager)
+    {
+        $limit = 20;
+        $countEntities = $dm->createQueryBuilder($entityClass)->getQuery()->count();
+        for ($skip = 0; $skip < $countEntities; $skip += $limit) {
+            $entities = $dm->createQueryBuilder(Node::class)
+                        ->skip($skip)
+                        ->limit($limit)
+                        ->getQuery()->execute();
+            foreach ($entities as $entity) {
+                $referenceManager->updateReferencesToEntity($entity);
+            }
+        }
+    }
+
+    /**
+     * @param string          $errorNodeId
+     * @param string          $siteId
+     * @param array           $languages
+     * @param string          $template
+     * @param StatusInterface $status
+     * @param DocumentManager $dm
+     */
+    protected function createErrorNode(
+        $errorNodeId,
+        $siteId,
+        array $languages,
+        $template,
+        StatusInterface $status,
+        DocumentManager $dm
+    ) {
+        $nodeManager = $this->container->get('open_orchestra_backoffice.manager.node');
+        foreach ($languages as $language) {
+            $errorNode = $nodeManager->createNewErrorNode($errorNodeId, $errorNodeId, NodeInterface::ROOT_PARENT_ID, $siteId, $language, $template);
+            $errorNode->setStatus($status);
+            $dm->persist($errorNode);
+        }
+
+        $dm->flush();
+    }
+
+    /**
+     * @param string          $errorNodeId
+     * @param string          $siteId
+     * @param DocumentManager $dm
+     *
+     * @return int
+     */
+    protected function countErrorNode($errorNodeId, $siteId, DocumentManager $dm)
+    {
+        $qb = $dm->createQueryBuilder(Node::class);
+        $qb->field('deleted')->equals(false)
+            ->field('siteId')->equals($siteId)
+            ->field('nodeId')->equals($errorNodeId)
+            ->field('nodeType')->equals(NodeInterface::TYPE_ERROR);
+
+        return $qb->getQuery()->count();
+    }
+
+    /**
+     * @param array                   $missingLanguages
+     * @param string                  $nodeId
+     * @param string                  $siteId
+     * @param NodeRepositoryInterface $nodeRepository
+     * @param DocumentManager         $dm
+     */
+    protected function createMissingNodeLanguage(
+        array $missingLanguages,
+        $nodeId,
+        $siteId,
+        NodeRepositoryInterface $nodeRepository,
+        DocumentManager $dm
+    ) {
+        $originalNode = $nodeRepository->findOneByNodeAndSite($nodeId, $siteId);
+        foreach ($missingLanguages as $missingLanguage) {
+            $newNode = $this->container->get('open_orchestra_backoffice.manager.node')->createNewLanguageNode($originalNode, $missingLanguage);
+            $dm->persist($newNode);
+        }
+        $dm->flush();
+    }
+
+    /**
+     * @param string $nodeId
+     * @param array  $languages
+     * @param string $siteId
+     * @param NodeRepositoryInterface $nodeRepository
+     *
+     * @return array
+     */
+    protected function searchMissingNodeLanguage($nodeId, array $languages, $siteId, NodeRepositoryInterface $nodeRepository)
+    {
+        $missingLanguages = [];
+        foreach ($languages as $language) {
+            if ($nodeRepository->countNotDeletedVersions($nodeId, $language, $siteId) === 0) {
+                $missingLanguages[] = $language;
+            }
+        }
+
+        return $missingLanguages;
+    }
+
+    /**
+     * @param string          $siteId
+     * @param DocumentManager $dm
+     *
+     * @return array
+     * @throws \Doctrine\ODM\MongoDB\MongoDBException
+     */
+    protected function getNodeIdsInSite($siteId, DocumentManager $dm)
+    {
+        $qb = $dm->createQueryBuilder(Node::class)->hydrate(false);
+        $qb->field('deleted')->equals(false)
+            ->field('siteId')->equals($siteId)
+            ->distinct('nodeId');
+
+        return $qb->getQuery()->execute()->toArray();
     }
 
 
@@ -360,11 +529,32 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
     /**
      * @param Database $db
      */
-    public function down(Database $db){
+   public function down(Database $db)
+   {
         $db->execute('
             db.node.find().forEach(function(item) {
                  db.node.update({ _id: item._id }, item);
             });
         ');
+   }
+
+    /**
+     * Check requirements for the migration
+     */
+    protected function checkRequirements()
+    {
+        $statusRepository = $this->container->get('open_orchestra_model.repository.status');
+        $this->abortIf((null === $statusRepository->findOnebyAutoUnpublishTo()), "Require offline status");
+        $this->abortIf((null === $statusRepository->findOneByTranslationState()), "Require to translate status");
+
+        $siteRepository = $this->container->get('open_orchestra_model.repository.site');
+        $sites = $siteRepository->findByDeleted(false);
+
+        /** @var SiteInterface $site */
+        foreach ($sites as $site) {
+            $this->abortIf((null === $site->getTemplateSet()), "Site ".$site->getSiteId(). "require template set");
+            $this->abortIf((null === $site->getTemplateNodeRoot()), "Site ".$site->getSiteId(). "require template set");
+        }
     }
+
 }
