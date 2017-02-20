@@ -2,26 +2,20 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 use Doctrine\ODM\MongoDB\DocumentManager;
-use OpenOrchestra\Backoffice\Reference\ReferenceManager;
 use OpenOrchestra\ModelBundle\Document\Block;
 use OpenOrchestra\ModelBundle\Document\Node;
 use OpenOrchestra\ModelInterface\Model\NodeInterface;
 use OpenOrchestra\ModelInterface\Model\SiteInterface;
 use OpenOrchestra\ModelInterface\Model\StatusInterface;
 use OpenOrchestra\ModelInterface\Repository\NodeRepositoryInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
 /**
  * Class Version20170216094244
  */
-class Version20170216094244 extends AbstractMigration implements ContainerAwareInterface
+class Version20170216094244 extends AbstractMigrationContentNode
 {
-    use ContainerAwareTrait;
-
     /**
      * @return string
      */
@@ -39,16 +33,19 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
 
         $configNodeMigration = $this->container->getParameter('open_orchestra_migration.node_configuration');
         $templateSetConfig = $this->container->get('open_orchestra_backoffice.manager.template')->getTemplateSetParameters();
+        $dm = $this->container->get('doctrine.odm.mongodb.document_manager');
+        $nodeRepository = $this->container->get('open_orchestra_model.repository.node');
+        $referenceManager = $this->container->get('open_orchestra_backoffice.reference.manager');
 
         $this->write(' + Adding the template');
         $configTemplate = $configNodeMigration['template_configuration'];
         $this->checkExecute($this->upTemplate($db, $configTemplate));
 
         $this->write(' + Adding the version name');
-        $this->checkExecute($this->upVersionName($db));
+        $this->checkExecute($this->upVersionName($db, 'node'));
 
         $this->write(' + Change status of published node not currentlyPublished in offline status');
-        $this->checkExecute($this->upPublishedNode($db));
+        $this->checkExecute($this->upPublishedEntity($db, 'node'));
 
         $this->write(' + Update storage blocks and areas');
         $this->checkExecute($this->upAreasNode($db, $templateSetConfig));
@@ -63,8 +60,6 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
         $this->upPathErrorNode($db);
 
         $sites = $this->container->get('open_orchestra_model.repository.site')->findByDeleted(false);
-        $dm = $this->container->get('doctrine.odm.mongodb.document_manager');
-        $nodeRepository = $this->container->get('open_orchestra_model.repository.node');
 
         /** @var SiteInterface $site */
         foreach ($sites as $site) {
@@ -90,32 +85,11 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
             }
         }
 
-        $referenceManager = $this->container->get('open_orchestra_backoffice.reference.manager');
         $this->write(' + Update use references of nodes');
         $this->updateUseReferenceEntity(Node::class, $dm, $referenceManager);
 
         $this->write(' + Update use references of blocks');
         $this->updateUseReferenceEntity(Block::class, $dm, $referenceManager);
-    }
-
-    /**
-     * @param String           $entityClass
-     * @param DocumentManager  $dm
-     * @param ReferenceManager $referenceManager
-     */
-    protected function updateUseReferenceEntity($entityClass, DocumentManager $dm, ReferenceManager $referenceManager)
-    {
-        $limit = 20;
-        $countEntities = $dm->createQueryBuilder($entityClass)->getQuery()->count();
-        for ($skip = 0; $skip < $countEntities; $skip += $limit) {
-            $entities = $dm->createQueryBuilder($entityClass)
-                        ->skip($skip)
-                        ->limit($limit)
-                        ->getQuery()->execute();
-            foreach ($entities as $entity) {
-                $referenceManager->updateReferencesToEntity($entity);
-            }
-        }
     }
 
     /**
@@ -409,42 +383,6 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
 
     /**
      * @param Database $db
-     *
-     * @return array
-     */
-    protected function upPublishedNode(Database $db)
-    {
-        return $db->execute('
-            var offlineStatus = db.status.findOne({"autoUnpublishToState": true});
-            if (typeof offlineStatus !== "undefined") {
-                db.node.find({"currentlyPublished": false, "status.published": true}).forEach(function(item) {
-                    item.status = offlineStatus;
-                    db.node.update({ _id: item._id }, item);
-                });
-            }
-        ');
-    }
-
-    /**
-     * @param Database $db
-     *
-     * @return array
-     */
-    protected function upVersionName(Database $db)
-    {
-        return $db->execute('
-            db.node.find().forEach(function(item) {
-                var date = item.createdAt.getUTCFullYear()+"-"+item.createdAt.getUTCMonth()+"-"+item.createdAt.getUTCDate();
-                var time = item.createdAt.getHours()+":"+item.createdAt.getMinutes()+":"+item.createdAt.getSeconds();
-                item.versionName = item.name + "_" + date + "_" + time;
-
-                db.node.update({ _id: item._id }, item);
-            });
-        ');
-    }
-
-    /**
-     * @param Database $db
      * @param array    $configTemplate
      *
      * @return array
@@ -561,14 +499,4 @@ class Version20170216094244 extends AbstractMigration implements ContainerAwareI
             $this->abortIf((null === $site->getTemplateNodeRoot()), "Site ".$site->getSiteId(). "require template set");
         }
     }
-
-    /**
-     * @param array $res
-     */
-    protected function checkExecute(array $res)
-    {
-        $message = isset($res["errmsg"]) ? $res["errmsg"] : '';
-        $this->abortIf((isset($res['ok']) && $res['ok'] == 0), $message);
-    }
-
 }
