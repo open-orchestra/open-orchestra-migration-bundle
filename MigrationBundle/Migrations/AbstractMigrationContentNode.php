@@ -26,7 +26,7 @@ abstract class AbstractMigrationContentNode extends AbstractMigration implements
         $limit = 20;
         $countEntities = $dm->createQueryBuilder($entityClass)->getQuery()->count();
         for ($skip = 0; $skip < $countEntities; $skip += $limit) {
-            $this->write('  - Update references of '.$skip.' to '.($skip+$limit));
+            $this->write('  - Update references from '.$skip.' to '.($skip+$limit));
             $entities = $dm->createQueryBuilder($entityClass)
                 ->skip($skip)
                 ->limit($limit)
