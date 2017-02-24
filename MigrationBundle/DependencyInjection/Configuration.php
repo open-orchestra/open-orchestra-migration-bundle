@@ -18,7 +18,30 @@ class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder();
-        $treeBuilder->root('open_orchestra_migration');
+        $rootNode = $treeBuilder->root('open_orchestra_migration');
+
+        $rootNode->children()
+            ->arrayNode('node_configuration')->addDefaultsIfNotSet()
+                ->children()
+                    ->arrayNode('template_configuration')->addDefaultsIfNotSet()
+                        ->children()
+                            ->scalarNode('defaultTemplate')->defaultValue('default')->end()
+                            ->arrayNode('specificTemplate')
+                            ->useAttributeAsKey('template')
+                            ->info('Specific template for a nodeId')
+                            ->defaultValue(array(
+                                'default' => array('root'),
+                            ))
+                            ->prototype('scalar')->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                    ->arrayNode('error_node_ids')
+                        ->defaultValue(array('errorPage404', 'errorPage503'))
+                        ->prototype('scalar')->end()
+                    ->end()
+                ->end()
+            ->end();
 
         return $treeBuilder;
     }
