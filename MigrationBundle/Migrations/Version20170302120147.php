@@ -15,7 +15,7 @@ class Version20170302120147 extends AbstractMigration
      */
     public function getDescription()
     {
-        return "Migration user & group 1.2 to 2.0";
+        return "Update user & group from 1.2 to 2.0";
     }
 
     /**
