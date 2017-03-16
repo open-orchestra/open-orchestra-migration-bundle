@@ -53,6 +53,9 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         $this->write(' + Updating block documents (medias in tinyMce attributes)');
 
         $this->checkExecute($db->execute('
+            /**
+             * Return all matching patterns with detailed info, not only the first one
+             */
             RegExp.prototype.execAll = function(string) {
                 var results = [], match;
                 this.lastIndex = 0;
@@ -63,6 +66,9 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
                 return results;
             };
 
+            /**
+             * Get the alt from mediaId in provided language
+             */
             function getMediaAlt(mediaId, language) {
                 var alt = "";
                 var mediaFilters = {"_id": ObjectId(mediaId), "alts": {$exists: true}};
@@ -76,24 +82,29 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
                 return alt;
             }
 
+            /**
+             * Update media tags in attribute inserting alt
+             */
+            function updateAttribute(attribute, mediaId, format, alt) {
+                var oldTag = "[media=" + format + "]" + mediaId + "[/media]";
+                var newTag = "[media={\"format\":\"" + format + "\",\"alt\":\"" + alt + "\",\"legend\":\"\"}]" + mediaId + "[/media]";
+
+                return attribute.replace(oldTag, newTag);
+            }
+
+            /**
+             * The main process
+             */
             db.block.find({}).forEach(function(block) {
                 var updated = false;
 
                 for (var attributeName in block.attributes) {
-                    if (block.attributes.hasOwnProperty(attributeName)
-                        && (typeof block.attributes[attributeName] == "string")
-                    ) {
+                    if (block.attributes.hasOwnProperty(attributeName) && (typeof block.attributes[attributeName] == "string")) {
                         var pattern = /\[media=([^\]\{]+)\]([^\]]+)\[\/media\]/g;
                         var matches = pattern.execAll(block.attributes[attributeName]);
 
                         for (var i = 0; i < matches.length; i++) {
-                            var format = matches[i][1];
-                            var mediaId = matches[i][2];
-                            var alt = getMediaAlt(mediaId, block.language);
-                            var oldTag = "[media=" + format + "]" + mediaId + "[/media]";
-                            var newTag = "[media={\"format\":\"" + format + "\",\"alt\":\"" + alt + "\",\"legend\":\"\"}]"
-                                + mediaId + "[/media]";
-                            block.attributes[attributeName] = block.attributes[attributeName].replace(oldTag, newTag);
+                            block.attributes[attributeName] = updateAttribute(block.attributes[attributeName], matches[i][2], matches[i][1], getMediaAlt(matches[i][2], block.language));
                             updated = true;
                         }
                     }

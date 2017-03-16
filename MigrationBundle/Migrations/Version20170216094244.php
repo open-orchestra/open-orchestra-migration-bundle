@@ -495,8 +495,8 @@ class Version20170216094244 extends AbstractMigrationContentNode
 
         /** @var SiteInterface $site */
         foreach ($sites as $site) {
-            $this->abortIf((null === $site->getTemplateSet()), "Site ".$site->getSiteId(). "require template set");
-            $this->abortIf((null === $site->getTemplateNodeRoot()), "Site ".$site->getSiteId(). "require template set");
+            $this->abortIf((null === $site->getTemplateSet()), "Site " . $site->getSiteId() . " require a template set");
+            $this->abortIf((null === $site->getTemplateNodeRoot()), "TemplateNodeRoot of site " . $site->getSiteId() . " must be set");
         }
     }
 }
