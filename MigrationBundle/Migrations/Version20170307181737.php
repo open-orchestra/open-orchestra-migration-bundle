@@ -2,27 +2,16 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use OpenOrchestra\MediaAdmin\FolderEvents;
+use OpenOrchestra\ModelBundle\Document\Content;
+use OpenOrchestra\ModelBundle\Document\Block;
 
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-class Version20170307181737 extends AbstractMigration implements ContainerAwareInterface
+class Version20170307181737 extends AbstractMigrationContentNode
 {
-    protected $container;
-
-    /**
-     * @param ContainerInterface $container
-     */
-    public function setContainer(ContainerInterface $container = null)
-    {
-        $this->container = $container;
-    }
-
     /**
      * @return string
      */
@@ -40,6 +29,7 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         $this->updateBlocks($db);
         $this->updateContents($db);
         $this->updateMedias($db);
+        $this->updateReferences();
     }
 
     /**
@@ -309,6 +299,25 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
     {
         $message = isset($res["errmsg"]) ? $res["errmsg"] : '';
         $this->abortIf((isset($res['ok']) && $res['ok'] == 0), $message);
+    }
+
+    protected function updateReferences()
+    {
+        $this->write(' + Update use references of medias in contents');
+
+        $this->updateUseReferenceEntity(
+            Content::class,
+            $this->container->get('doctrine.odm.mongodb.document_manager'),
+            $this->container->get('open_orchestra_backoffice.reference.manager')
+            );
+
+        $this->write(' + Update use references of medias in contents');
+
+        $this->updateUseReferenceEntity(
+            Block::class,
+            $this->container->get('doctrine.odm.mongodb.document_manager'),
+            $this->container->get('open_orchestra_backoffice.reference.manager')
+        );
     }
 
     /**
