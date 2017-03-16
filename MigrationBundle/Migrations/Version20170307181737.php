@@ -86,10 +86,38 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
              * Update media tags in attribute inserting alt
              */
             function updateAttribute(attribute, mediaId, format, alt) {
-                var oldTag = "[media=" + format + "]" + mediaId + "[/media]";
+                var oldTag1 = "[media=" + format + "]" + mediaId + "[/media]";
+                var oldTag2 = "[media={\"format\":\"" + format + "\"}]" + mediaId + "[/media]";
                 var newTag = "[media={\"format\":\"" + format + "\",\"alt\":\"" + alt + "\",\"legend\":\"\"}]" + mediaId + "[/media]";
 
-                return attribute.replace(oldTag, newTag);
+                attribute = attribute.replace(oldTag2, newTag);
+                attribute = attribute.replace(oldTag1, newTag);
+
+                return attribute;
+            }
+
+            /**
+             * Extract media id from match
+             */
+            function getMediaIdFromMatch(match) {
+                var mediaId = match[2];
+                if (null == mediaId) {
+                    mediaId = match[4];
+                }
+
+                return mediaId;
+            }
+
+            /**
+             * Extract media format from match
+             */
+            function getMediaFormatFromMatch(match) {
+                var format = match[1];
+                if (null == format) {
+                    format = match[3];
+                }
+
+                return format;
             }
 
             /**
@@ -100,11 +128,13 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
 
                 for (var attributeName in block.attributes) {
                     if (block.attributes.hasOwnProperty(attributeName) && (typeof block.attributes[attributeName] == "string")) {
-                        var pattern = /\[media=([^\]\{]+)\]([^\]]+)\[\/media\]/g;
+                        var pattern = /\[media=([^\]\{]+)\]([^\]]+)\[\/media\]|\[media=\{"format":"([^"]+)"\}\]([^\]]+)\[\/media\]/g;
                         var matches = pattern.execAll(block.attributes[attributeName]);
 
                         for (var i = 0; i < matches.length; i++) {
-                            block.attributes[attributeName] = updateAttribute(block.attributes[attributeName], matches[i][2], matches[i][1], getMediaAlt(matches[i][2], block.language));
+                            var mediaId = getMediaIdFromMatch(matches[i]);
+                            var format = getMediaFormatFromMatch(matches[i]);
+                            block.attributes[attributeName] = updateAttribute(block.attributes[attributeName], mediaId, format, getMediaAlt(mediaId, block.language));
                             updated = true;
                         }
                     }
