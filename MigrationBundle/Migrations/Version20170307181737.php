@@ -50,7 +50,8 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
      */
     protected function updateBlocks(Database $db)
     {
-        $this->write(' + Updating block documents (medias in tinyMce attributes)');
+        $this->write(' + Updating block documents');
+        $this->write('  + updating medias in tinyMce attributes');
 
         $this->checkExecute($db->execute(
             $this->getJSFunctions() . '
@@ -80,14 +81,27 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
     }
 
     /**
-     * Add alt+legend to tinyMce attributes in blocks
-     * alt is taken from the media document
+     * Update Content documents
      *
      * @param Database $db
      */
     protected function updateContents(Database $db)
     {
-        $this->write(' + Updating content documents (medias in tinyMce attributes)');
+        $this->write(' + Updating content documents');
+
+        $this->updateTinyMCEInContent($db);
+        $this->updateMediaInContent($db);
+    }
+
+    /**
+     * Add alt+legend to tinyMce attributes in contents
+     * alt is taken from the media document
+     *
+     * @param Database $db
+     */
+    protected function updateTinyMCEInContent(Database $db)
+    {
+        $this->write('  + Updating medias in tinyMce attributes');
 
         $this->checkExecute($db->execute(
             $this->getJSFunctions() . '
@@ -106,6 +120,37 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
                             content.attributes[attributeName].value = updateAttribute(content.attributes[attributeName].value, mediaId, format, getMediaAlt(mediaId, content.language));
                             updated = true;
                         }
+                    }
+                }
+
+                if (updated) {
+                    db.content.update({_id: content._id}, content);
+                }
+            });
+        '));
+    }
+
+    /**
+     * Update Medias in contents by adding alt and legend
+     * alt is taken from the media document
+     *
+     * @param Database $db
+     */
+    protected function updateMediaInContent(Database $db)
+    {
+        $this->write('  + Updating orchestra_media attributes');
+
+        $this->checkExecute($db->execute(
+            $this->getJSFunctions() . '
+
+            db.content.find({}).forEach(function(content) {
+                var updated = false;
+
+                for (var attributeName in content.attributes) {
+                    if (content.attributes.hasOwnProperty(attributeName) && "orchestra_media" == content.attributes[attributeName].type) {
+                        content.attributes[attributeName].value.alt = getMediaAlt(content.attributes[attributeName].value.id, content.language);
+                        content.attributes[attributeName].value.legend = "";
+                        updated = true;
                     }
                 }
 
