@@ -38,13 +38,13 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
     {
         $this->updateFolders($db);
         $this->updateBlocks($db);
-
+        $this->updateContents($db);
         $this->updateMedias($db);
     }
 
     /**
-     * Add alt+legens to tinyMce attributes in blocks
-     * alt is taken from media document
+     * Add alt+legend to tinyMce attributes in blocks
+     * alt is taken from the media document
      *
      * @param Database $db
      */
@@ -52,77 +52,9 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
     {
         $this->write(' + Updating block documents (medias in tinyMce attributes)');
 
-        $this->checkExecute($db->execute('
-            /**
-             * Return all matching patterns with detailed info, not only the first one
-             */
-            RegExp.prototype.execAll = function(string) {
-                var results = [], match;
-                this.lastIndex = 0;
-                while (match = this.exec(string)) {
-                    results.push(match);
-                }
+        $this->checkExecute($db->execute(
+            $this->getJSFunctions() . '
 
-                return results;
-            };
-
-            /**
-             * Get the alt from mediaId in provided language
-             */
-            function getMediaAlt(mediaId, language) {
-                var alt = "";
-                var mediaFilters = {"_id": ObjectId(mediaId), "alts": {$exists: true}};
-
-                db.media.find(mediaFilters).forEach(function(media) {
-                    if (media.alts[language]) {
-                        alt = media.alts[language];
-                    }
-                });
-
-                return alt;
-            }
-
-            /**
-             * Update media tags in attribute inserting alt
-             */
-            function updateAttribute(attribute, mediaId, format, alt) {
-                var oldTag1 = "[media=" + format + "]" + mediaId + "[/media]";
-                var oldTag2 = "[media={\"format\":\"" + format + "\"}]" + mediaId + "[/media]";
-                var newTag = "[media={\"format\":\"" + format + "\",\"alt\":\"" + alt + "\",\"legend\":\"\"}]" + mediaId + "[/media]";
-
-                attribute = attribute.replace(oldTag2, newTag);
-                attribute = attribute.replace(oldTag1, newTag);
-
-                return attribute;
-            }
-
-            /**
-             * Extract media id from match
-             */
-            function getMediaIdFromMatch(match) {
-                var mediaId = match[2];
-                if (null == mediaId) {
-                    mediaId = match[4];
-                }
-
-                return mediaId;
-            }
-
-            /**
-             * Extract media format from match
-             */
-            function getMediaFormatFromMatch(match) {
-                var format = match[1];
-                if (null == format) {
-                    format = match[3];
-                }
-
-                return format;
-            }
-
-            /**
-             * The main process
-             */
             db.block.find({}).forEach(function(block) {
                 var updated = false;
 
@@ -142,6 +74,43 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
 
                 if (updated) {
                     db.block.update({_id: block._id}, block);
+                }
+            });
+        '));
+    }
+
+    /**
+     * Add alt+legend to tinyMce attributes in blocks
+     * alt is taken from the media document
+     *
+     * @param Database $db
+     */
+    protected function updateContents(Database $db)
+    {
+        $this->write(' + Updating content documents (medias in tinyMce attributes)');
+
+        $this->checkExecute($db->execute(
+            $this->getJSFunctions() . '
+
+            db.content.find({}).forEach(function(content) {
+                var updated = false;
+
+                for (var attributeName in content.attributes) {
+                    if (content.attributes.hasOwnProperty(attributeName) && "wysiwyg" == content.attributes[attributeName].type) {
+                        var pattern = /\[media=([^\]\{]+)\]([^\]]+)\[\/media\]|\[media=\{"format":"([^"]+)"\}\]([^\]]+)\[\/media\]/g;
+                        var matches = pattern.execAll(content.attributes[attributeName].value);
+
+                        for (var i = 0; i < matches.length; i++) {
+                            var mediaId = getMediaIdFromMatch(matches[i]);
+                            var format = getMediaFormatFromMatch(matches[i]);
+                            content.attributes[attributeName].value = updateAttribute(content.attributes[attributeName].value, mediaId, format, getMediaAlt(mediaId, content.language));
+                            updated = true;
+                        }
+                    }
+                }
+
+                if (updated) {
+                    db.content.update({_id: content._id}, content);
                 }
             });
         '));
@@ -209,6 +178,83 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         }
 
         $this->container->get('object_manager')->flush();
+    }
+
+    /**
+     * Get the JS function required for the migration
+     *
+     * @return string
+     */
+    protected function getJSFunctions()
+    {
+        return '
+            /**
+             * Return all matching patterns with detailed info, not only the first match
+             */
+            RegExp.prototype.execAll = function(string) {
+                var results = [], match;
+                this.lastIndex = 0;
+                while (match = this.exec(string)) {
+                    results.push(match);
+                }
+
+                return results;
+            };
+
+            /**
+             * Get the alt from mediaId in provided language
+             */
+            function getMediaAlt(mediaId, language) {
+                var alt = "";
+                var mediaFilters = {"_id": ObjectId(mediaId), "alts": {$exists: true}};
+
+                db.media.find(mediaFilters).forEach(function(media) {
+                    if (media.alts[language]) {
+                        alt = media.alts[language];
+                    }
+                });
+
+                return alt;
+            }
+
+            /**
+             * Update media tags in attribute inserting alt
+             */
+            function updateAttribute(html, mediaId, format, alt) {
+                var oldTag1 = "[media=" + format + "]" + mediaId + "[/media]";
+                var oldTag2 = "[media={\"format\":\"" + format + "\"}]" + mediaId + "[/media]";
+                var newTag = "[media={\"format\":\"" + format + "\",\"alt\":\"" + alt + "\",\"legend\":\"\"}]" + mediaId + "[/media]";
+
+                html = html.replace(oldTag2, newTag);
+                html = html.replace(oldTag1, newTag);
+
+                return html;
+            }
+
+            /**
+             * Extract media id from match
+             */
+            function getMediaIdFromMatch(match) {
+                var mediaId = match[2];
+                if (null == mediaId) {
+                    mediaId = match[4];
+                }
+
+                return mediaId;
+            }
+
+            /**
+             * Extract media format from match
+             */
+            function getMediaFormatFromMatch(match) {
+                var format = match[1];
+                if (null == format) {
+                    format = match[3];
+                }
+
+                return format;
+            }
+        ';
     }
 
     /**
