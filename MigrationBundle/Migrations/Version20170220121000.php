@@ -15,7 +15,7 @@ class Version20170220121000 extends AbstractMigrationContentNode
      */
     public function getDescription()
     {
-        return "Migration content 1.2 to 2.0";
+        return "Update content from 1.2 to 2.0";
     }
 
     /**
