@@ -301,6 +301,9 @@ class Version20170307181737 extends AbstractMigrationContentNode
         $this->abortIf((isset($res['ok']) && $res['ok'] == 0), $message);
     }
 
+    /**
+     * Update Media references
+     */
     protected function updateReferences()
     {
         $this->write(' + Update use references of medias in contents');
