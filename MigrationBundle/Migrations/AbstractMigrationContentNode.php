@@ -70,10 +70,13 @@ abstract class AbstractMigrationContentNode extends AbstractMigration implements
                 var time = item.createdAt.getHours()+":"+item.createdAt.getMinutes()+":"+item.createdAt.getSeconds();
                 item.versionName = item.name + "_" + date + "_" + time;
 
+                item.version = item.version + "";
+
                 db.'.$collection.'.update({ _id: item._id }, item);
             });
         ');
     }
+
 
     /**
      * @param array $res

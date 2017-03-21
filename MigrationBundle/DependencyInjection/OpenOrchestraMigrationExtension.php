@@ -21,5 +21,6 @@ class OpenOrchestraMigrationExtension extends Extension
         $config = $this->processConfiguration($configuration, $configs);
 
         $container->setParameter('open_orchestra_migration.node_configuration', $config['node_configuration']);
+        $container->setParameter('open_orchestra_migration.site_configuration', $config['site_configuration']);
     }
 }

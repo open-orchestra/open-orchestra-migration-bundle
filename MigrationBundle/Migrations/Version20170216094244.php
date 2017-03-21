@@ -41,7 +41,7 @@ class Version20170216094244 extends AbstractMigrationContentNode
         $configTemplate = $configNodeMigration['template_configuration'];
         $this->checkExecute($this->upTemplate($db, $configTemplate));
 
-        $this->write(' + Adding the version name');
+        $this->write(' + Adding the version name and convert version to string');
         $this->checkExecute($this->upVersionName($db, 'node'));
 
         $this->write(' + Change status of published node not currentlyPublished in offline status');
