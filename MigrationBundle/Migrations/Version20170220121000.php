@@ -42,7 +42,10 @@ class Version20170220121000 extends AbstractMigrationContentNode
     /**
      * @param Database $db
      */
-    public function down(Database $db){}
+    public function down(Database $db)
+    {
+        $this->write('There is no down method for this migration');
+    }
 
     /**
      * @param Database $db

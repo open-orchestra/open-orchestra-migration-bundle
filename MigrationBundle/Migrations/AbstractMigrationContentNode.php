@@ -77,7 +77,6 @@ abstract class AbstractMigrationContentNode extends AbstractMigration implements
         ');
     }
 
-
     /**
      * @param array $res
      */

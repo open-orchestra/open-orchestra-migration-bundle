@@ -18,6 +18,9 @@ class Version20170321150342 extends AbstractMigration
         return "Update workflow from 1.2 to 2.0";
     }
 
+    /**
+     * @param Database $db
+     */
     public function up(Database $db)
     {
         $this->write(' + Rename workflow_function collection to workflow_profile');
@@ -68,6 +71,9 @@ class Version20170321150342 extends AbstractMigration
         $db->execute('db.workflow_right.drop();');
     }
 
+    /**
+     * @param Database $db
+     */
     public function down(Database $db)
     {
         $this->write('There is no down method for this migration');

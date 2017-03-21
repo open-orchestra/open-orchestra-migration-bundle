@@ -66,8 +66,11 @@ class Version20170216094204 extends AbstractMigration
         ');
     }
 
+    /**
+     * @param Database $db
+     */
     public function down(Database $db)
     {
-        // this down() migration is auto-generated, please modify it to your needs
+        $this->write('There is no down method for this migration');
     }
 }
