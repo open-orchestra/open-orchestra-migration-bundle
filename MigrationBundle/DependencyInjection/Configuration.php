@@ -41,6 +41,32 @@ class Configuration implements ConfigurationInterface
                         ->prototype('scalar')->end()
                     ->end()
                 ->end()
+            ->end()
+            ->arrayNode('site_configuration')->addDefaultsIfNotSet()
+                ->children()
+                    ->arrayNode('template_configuration')->addDefaultsIfNotSet()
+                        ->children()
+                            ->scalarNode('defaultTemplateSet')->defaultValue('default')->end()
+                            ->scalarNode('defaultTemplateNodeRoot')->defaultValue('home')->end()
+                            ->arrayNode('specificTemplate')
+                            ->useAttributeAsKey('siteId')
+                            ->info('Specific templateSet and templateNodeRoot for a siteId')
+                            ->prototype('array')
+                                ->children()
+                                    ->scalarNode('templateSet')->end()
+                                    ->scalarNode('templateNodeRoot')->end()
+                                ->end()
+                            ->end()
+                            ->defaultValue(array(
+                                '2' => array(
+                                    'templateSet'=> 'default',
+                                    'templateNodeRoot'=> 'column_left',
+                                ),
+                            ))
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
             ->end();
 
         return $treeBuilder;

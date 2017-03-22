@@ -314,7 +314,7 @@ class Version20170307181737 extends AbstractMigrationContentNode
             $this->container->get('open_orchestra_backoffice.reference.manager')
             );
 
-        $this->write(' + Update use references of medias in contents');
+        $this->write(' + Update use references of medias in blocks');
 
         $this->updateUseReferenceEntity(
             Block::class,

@@ -8,7 +8,7 @@ use Doctrine\MongoDB\Database;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-class Version20170302120147 extends AbstractMigration
+class Version20170216094204 extends AbstractMigration
 {
     /**
      * @return string
@@ -23,7 +23,7 @@ class Version20170302120147 extends AbstractMigration
      */
     public function up(Database $db)
     {
-        return $db->execute('
+        $db->execute('
             db.user.update({} , {$unset: {locked: "" , expired: "", credentialsExpired: ""}}, {multi: true});
             db.user.update({}, {$set: {languageBySites: [], editAllowed: false}}, {multi: true});
             db.user.find({"roles.0": "ROLE_SUPER_ADMIN"}).forEach(function(user) {
@@ -34,8 +34,8 @@ class Version20170302120147 extends AbstractMigration
                 user.roles = [];
                 db.user.update({_id: user._id}, user);
             });
-            db.users_group.update({} , {$unset: {modelRoles: "" , roles: ""}}, {multi: true});
-            db.users_group.update({}, {$set: {workflowProfileCollections: {}, perimeters: {}, deleted: false}}, {multi: true});
+            db.users_group.update({} , {$unset: {modelRoles: "" }}, {multi: true});
+            db.users_group.update({}, {$set: {workflowProfileCollections: {}, perimeters: {}, deleted: false, roles: []}}, {multi: true});
             db.users_group.find({"site": {$exists: false}}).forEach(function(users_group) {
                 var new_users_groups = [];
                 var users_group_name = users_group.name;
@@ -66,9 +66,11 @@ class Version20170302120147 extends AbstractMigration
         ');
     }
 
+    /**
+     * @param Database $db
+     */
     public function down(Database $db)
     {
-        // this down() migration is auto-generated, please modify it to your needs
-
+        $this->write('There is no down method for this migration');
     }
 }
