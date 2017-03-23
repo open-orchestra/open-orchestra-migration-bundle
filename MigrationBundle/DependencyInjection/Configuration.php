@@ -27,12 +27,14 @@ class Configuration implements ConfigurationInterface
                         ->children()
                             ->scalarNode('defaultTemplate')->defaultValue('default')->end()
                             ->arrayNode('specificTemplate')
-                            ->useAttributeAsKey('template')
-                            ->info('Specific template for a nodeId')
-                            ->defaultValue(array(
-                                'default' => array('root'),
-                            ))
-                            ->prototype('scalar')->end()
+                                ->useAttributeAsKey('template')
+                                ->info('Specific template for a nodeId')
+                                ->defaultValue(array(
+                                    'default' => array('root'),
+                                ))
+                                ->prototype('array')
+                                    ->prototype('scalar')->end()
+                                ->end()
                             ->end()
                         ->end()
                     ->end()
