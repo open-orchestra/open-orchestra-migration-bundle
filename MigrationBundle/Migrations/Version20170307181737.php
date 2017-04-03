@@ -137,7 +137,13 @@ class Version20170307181737 extends AbstractMigrationContentNode
                 var updated = false;
 
                 for (var attributeName in content.attributes) {
-                    if (content.attributes.hasOwnProperty(attributeName) && "orchestra_media" == content.attributes[attributeName].type) {
+                    if (
+                        content.attributes.hasOwnProperty(attributeName) &&
+                        "orchestra_media" == content.attributes[attributeName].type &&
+                        content.attributes[attributeName].hasOwnProperty("value") &&
+                        null !== content.attributes[attributeName].value.id &&
+                        "" !== content.attributes[attributeName].value.id
+                    ) {
                         content.attributes[attributeName].value.alt = getMediaAlt(content.attributes[attributeName].value.id, content.language);
                         content.attributes[attributeName].value.legend = "";
                         updated = true;
