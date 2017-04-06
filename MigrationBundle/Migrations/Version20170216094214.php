@@ -85,6 +85,14 @@ class Version20170216094214 extends AbstractMigration implements ContainerAwareI
                 displayColor: "blue"
             }] )');
         }
+
+        $this->write(' + Update embedded status in node and content');
+        $db->execute('
+            db.status.find({}).forEach(function(item) {
+                db.node.update( {"status._id": item._id}, { $set: { "status": item } }, { multi: true } );
+                db.content.update( {"status._id": item._id}, { $set: { "status": item } }, { multi: true } );
+            });
+        ');
     }
 
     /**

@@ -43,25 +43,6 @@ abstract class AbstractMigrationContentNode extends AbstractMigration implements
      *
      * @return array
      */
-    protected function upPublishedEntity(Database $db, $collection)
-    {
-        return $db->execute('
-            var offlineStatus = db.status.findOne({"autoUnpublishToState": true});
-            if (typeof offlineStatus !== "undefined") {
-                db.'.$collection.'.find({"currentlyPublished": false, "status.published": true}).forEach(function(item) {
-                    item.status = offlineStatus;
-                    db.'.$collection.'.update({ _id: item._id }, item);
-                });
-            }
-        ');
-    }
-
-    /**
-     * @param Database $db
-     * @param string   $collection
-     *
-     * @return array
-     */
     protected function upVersionName(Database $db, $collection)
     {
         return $db->execute('

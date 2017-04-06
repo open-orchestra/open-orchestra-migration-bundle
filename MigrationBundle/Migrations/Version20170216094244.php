@@ -45,7 +45,7 @@ class Version20170216094244 extends AbstractMigrationContentNode
         $this->checkExecute($this->upVersionName($db, 'node'));
 
         $this->write(' + Change status of published node not currentlyPublished in offline status');
-        $this->checkExecute($this->upPublishedEntity($db, 'node'));
+        $this->checkExecute($this->upPublishedEntity($db));
 
         $this->write(' + Update storage blocks and areas');
         $this->checkExecute($this->upAreasNode($db, $templateSetConfig));
@@ -461,6 +461,27 @@ class Version20170216094244 extends AbstractMigrationContentNode
 
                  db.node.update({ _id: item._id }, item);
             });
+        ');
+    }
+
+    /**
+     * @param Database $db
+     *
+     * @return array
+     */
+    protected function upPublishedEntity(Database $db)
+    {
+        return $db->execute('
+            var offlineStatus = db.status.findOne({"autoUnpublishToState": true});
+            if (typeof offlineStatus !== "undefined") {
+                db.node.find({"status.publishedState": true}).forEach(function(item) {
+                    var lastPublished = db.node.find({"status.publishedState": true, "language": item.language, "siteId": item.siteId, "nodeId": item.nodeId}).sort({"version": -1}).limit(1).toArray()[0];
+                    if (lastPublished._id.str != item._id.str) {
+                        item.status = offlineStatus;
+                        db.node.update({ _id: item._id }, item);
+                    }
+                });
+            }
         ');
     }
 
