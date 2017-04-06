@@ -30,7 +30,7 @@ class Version20170220121000 extends AbstractMigrationContentNode
         $this->checkExecute($this->upVersionName($db, 'content'));
 
         $this->write(' + Change status of published content not currentlyPublished in offline status');
-        $this->checkExecute($this->upPublishedEntity($db, 'content'));
+        $this->checkExecute($this->upPublishedEntity($db));
 
         $this->write(' + Update use references of contents');
         $this->updateUseReferenceEntity(Content::class, $dm, $referenceManager);
@@ -74,6 +74,27 @@ class Version20170220121000 extends AbstractMigrationContentNode
 
                  db.content.update({ _id: item._id }, item);
             });
+        ');
+    }
+
+    /**
+     * @param Database $db
+     *
+     * @return array
+     */
+    protected function upPublishedEntity(Database $db)
+    {
+        return $db->execute('
+            var offlineStatus = db.status.findOne({"autoUnpublishToState": true});
+            if (typeof offlineStatus !== "undefined") {
+                db.content.find({"status.publishedState": true}).forEach(function(item) {
+                    var lastPublished = db.content.find({"status.publishedState": true, "language": item.language, "contentId": item.contentId}).sort({"version": -1}).limit(1).toArray()[0];
+                    if (lastPublished._id.str != item._id.str) {
+                        item.status = offlineStatus;
+                        db.content.update({ _id: item._id }, item);
+                    }
+                });
+            }
         ');
     }
 
