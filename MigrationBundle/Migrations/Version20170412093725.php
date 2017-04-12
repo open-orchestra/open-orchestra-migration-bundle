@@ -60,7 +60,6 @@ class Version20170412093725 extends AbstractMigration implements ContainerAwareI
      */
     protected function updateUseReferenceEntity($entityClass, DocumentManager $dm, ReferenceManager $referenceManager)
     {
-        $timestamp_debut = microtime(true);
         $limit = 20;
         $countEntities = $dm->createQueryBuilder($entityClass)->getQuery()->count();
         for ($skip = 0; $skip < $countEntities; $skip += $limit) {
@@ -74,8 +73,5 @@ class Version20170412093725 extends AbstractMigration implements ContainerAwareI
             }
             $dm->clear();
         }
-        $timestamp_fin = microtime(true);
-        $difference_ms = $timestamp_fin - $timestamp_debut;
-        $this->write($difference_ms);
     }
 }
