@@ -395,7 +395,7 @@ class Version20170216094244 extends AbstractMigrationContentNode
                 var template = configTemplate.defaultTemplate;
                 for (var i in configTemplate.specificTemplate) {
                     var nodesId = configTemplate.specificTemplate[i];
-                    if (typeof nodesId[item.nodeId] !== "undefined") {
+                    if (nodesId.indexOf(item.nodeId) > -1) {
                         template = i;
                         break;
                     }
