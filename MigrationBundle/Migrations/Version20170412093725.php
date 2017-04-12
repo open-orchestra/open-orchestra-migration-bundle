@@ -54,7 +54,6 @@ class Version20170412093725 extends AbstractMigration implements ContainerAwareI
         $this->write('There is no down method for this migration');
     }
 
-
     /**
      * @param String           $entityClass
      * @param DocumentManager  $dm
@@ -80,5 +79,4 @@ class Version20170412093725 extends AbstractMigration implements ContainerAwareI
         $difference_ms = $timestamp_fin - $timestamp_debut;
         $this->write($difference_ms);
     }
-
 }
