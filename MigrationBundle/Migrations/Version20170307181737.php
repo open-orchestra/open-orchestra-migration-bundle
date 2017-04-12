@@ -258,7 +258,7 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         foreach ($rootFolders as $folder) {
             $event = $this->container->get('open_orchestra_media_admin.event.folder_event.factory')->createFolderEvent();
             $event->setFolder($folder);
-            $this->container->get('event_dispatcher')->dispatch(FolderEvents::PARENT_UPDATED, $event);
+            $this->container->get('event_dispatcher')->dispatch(FolderEvents::PATH_UPDATED, $event);
         }
 
         $this->container->get('object_manager')->flush();
