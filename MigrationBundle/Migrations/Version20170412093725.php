@@ -43,7 +43,6 @@ class Version20170412093725 extends AbstractMigration implements ContainerAwareI
 
         $this->write(' + Update use references of contents');
         $this->updateUseReferenceEntity(Content::class, $dm, $referenceManager);
-        die();
     }
 
     /**
