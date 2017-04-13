@@ -386,10 +386,12 @@ class Version20170216094244 extends AbstractMigrationContentNode
             db.node.find().forEach(function(item) {
                 var template = configTemplate.defaultTemplate;
                 for (var i in configTemplate.specificTemplate) {
-                    var nodesId = configTemplate.specificTemplate[i];
-                    if (nodesId.indexOf(item.nodeId) > -1) {
-                        template = i;
-                        break;
+                    if (
+                        configTemplate.specificTemplate[i].hasOwnProperty(item.siteId) &&
+                        configTemplate.specificTemplate[i][item.siteId].indexOf(item.nodeId) > -1
+                        ) {
+                            template = i;
+                            break;
                     }
                 }
                 item.template = template;

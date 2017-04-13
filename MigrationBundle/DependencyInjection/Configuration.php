@@ -33,7 +33,10 @@ class Configuration implements ConfigurationInterface
                                     'default' => array('root'),
                                 ))
                                 ->prototype('array')
-                                    ->prototype('scalar')->end()
+                                    ->useAttributeAsKey('siteId')
+                                    ->prototype('array')
+                                        ->prototype('scalar')->end()
+                                    ->end()
                                 ->end()
                             ->end()
                         ->end()
