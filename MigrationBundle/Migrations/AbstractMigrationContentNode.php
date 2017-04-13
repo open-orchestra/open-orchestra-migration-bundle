@@ -4,8 +4,6 @@ namespace OpenOrchestra\MigrationBundle\Migrations;
 
 use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
-use Doctrine\ODM\MongoDB\DocumentManager;
-use OpenOrchestra\Backoffice\Reference\ReferenceManager;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
@@ -15,27 +13,6 @@ use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 abstract class AbstractMigrationContentNode extends AbstractMigration implements ContainerAwareInterface
 {
     use ContainerAwareTrait;
-
-    /**
-     * @param String           $entityClass
-     * @param DocumentManager  $dm
-     * @param ReferenceManager $referenceManager
-     */
-    protected function updateUseReferenceEntity($entityClass, DocumentManager $dm, ReferenceManager $referenceManager)
-    {
-        $limit = 20;
-        $countEntities = $dm->createQueryBuilder($entityClass)->getQuery()->count();
-        for ($skip = 0; $skip < $countEntities; $skip += $limit) {
-            $this->write('  - Update references from '.$skip.' to '.($skip+$limit));
-            $entities = $dm->createQueryBuilder($entityClass)
-                ->skip($skip)
-                ->limit($limit)
-                ->getQuery()->execute();
-            foreach ($entities as $entity) {
-                $referenceManager->updateReferencesToEntity($entity);
-            }
-        }
-    }
 
     /**
      * @param Database $db

@@ -3,7 +3,6 @@
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
 use Doctrine\MongoDB\Database;
-use OpenOrchestra\ModelBundle\Document\Content;
 
 /**
  * Class Version20170220121000
@@ -23,17 +22,11 @@ class Version20170220121000 extends AbstractMigrationContentNode
      */
     public function up(Database $db)
     {
-        $dm = $this->container->get('doctrine.odm.mongodb.document_manager');
-        $referenceManager = $this->container->get('open_orchestra_backoffice.reference.manager');
-
         $this->write(' + Adding the version name');
         $this->checkExecute($this->upVersionName($db, 'content'));
 
         $this->write(' + Change status of published content not currentlyPublished in offline status');
         $this->checkExecute($this->upPublishedEntity($db));
-
-        $this->write(' + Update use references of contents');
-        $this->updateUseReferenceEntity(Content::class, $dm, $referenceManager);
 
         $this->write(' + Removing unused properties (currentlyPublished, status.fromRoles, status.toRoles, contentTypeVersion)');
         $this->checkExecute($this->upRemoveUnusedProperties($db));

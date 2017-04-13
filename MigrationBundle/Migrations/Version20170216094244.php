@@ -4,7 +4,6 @@ namespace OpenOrchestra\MigrationBundle\Migrations;
 
 use Doctrine\MongoDB\Database;
 use Doctrine\ODM\MongoDB\DocumentManager;
-use OpenOrchestra\ModelBundle\Document\Block;
 use OpenOrchestra\ModelBundle\Document\Node;
 use OpenOrchestra\ModelInterface\Model\NodeInterface;
 use OpenOrchestra\ModelInterface\Model\SiteInterface;
@@ -35,7 +34,6 @@ class Version20170216094244 extends AbstractMigrationContentNode
         $templateSetConfig = $this->container->get('open_orchestra_backoffice.manager.template')->getTemplateSetParameters();
         $dm = $this->container->get('doctrine.odm.mongodb.document_manager');
         $nodeRepository = $this->container->get('open_orchestra_model.repository.node');
-        $referenceManager = $this->container->get('open_orchestra_backoffice.reference.manager');
 
         $this->write(' + Adding the template');
         $configTemplate = $configNodeMigration['template_configuration'];
@@ -84,12 +82,6 @@ class Version20170216094244 extends AbstractMigrationContentNode
                 }
             }
         }
-
-        $this->write(' + Update use references of nodes');
-        $this->updateUseReferenceEntity(Node::class, $dm, $referenceManager);
-
-        $this->write(' + Update use references of blocks');
-        $this->updateUseReferenceEntity(Block::class, $dm, $referenceManager);
     }
 
     /**

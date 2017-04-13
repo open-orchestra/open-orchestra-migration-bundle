@@ -2,16 +2,19 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
+use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 use OpenOrchestra\MediaAdmin\FolderEvents;
-use OpenOrchestra\ModelBundle\Document\Content;
-use OpenOrchestra\ModelBundle\Document\Block;
+use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-class Version20170307181737 extends AbstractMigrationContentNode
+class Version20170307181737 extends AbstractMigration implements ContainerAwareInterface
 {
+    use ContainerAwareTrait;
+
     /**
      * @return string
      */
@@ -29,7 +32,6 @@ class Version20170307181737 extends AbstractMigrationContentNode
         $this->updateBlocks($db);
         $this->updateContents($db);
         $this->updateMedias($db);
-        $this->updateReferences();
     }
 
     /**
@@ -346,28 +348,6 @@ class Version20170307181737 extends AbstractMigrationContentNode
     {
         $message = isset($res["errmsg"]) ? $res["errmsg"] : '';
         $this->abortIf((isset($res['ok']) && $res['ok'] == 0), $message);
-    }
-
-    /**
-     * Update Media references
-     */
-    protected function updateReferences()
-    {
-        $this->write(' + Update use references of medias in contents');
-
-        $this->updateUseReferenceEntity(
-            Content::class,
-            $this->container->get('doctrine.odm.mongodb.document_manager'),
-            $this->container->get('open_orchestra_backoffice.reference.manager')
-            );
-
-        $this->write(' + Update use references of medias in blocks');
-
-        $this->updateUseReferenceEntity(
-            Block::class,
-            $this->container->get('doctrine.odm.mongodb.document_manager'),
-            $this->container->get('open_orchestra_backoffice.reference.manager')
-        );
     }
 
     /**
