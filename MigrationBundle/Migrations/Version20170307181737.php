@@ -41,7 +41,8 @@ class Version20170307181737 extends AbstractMigrationContentNode
     protected function updateBlocks(Database $db)
     {
         $this->write(' + Updating block documents');
-        $this->write('  + updating medias in tinyMce attributes');
+
+        $this->write(' + updating medias in tinyMce attributes');
 
         $this->checkExecute($db->execute(
             $this->getJSFunctions() . '
@@ -60,6 +61,40 @@ class Version20170307181737 extends AbstractMigrationContentNode
                             block.attributes[attributeName] = updateAttribute(block.attributes[attributeName], mediaId, format, getMediaAlt(mediaId, block.language));
                             updated = true;
                         }
+                    }
+                }
+
+                if (updated) {
+                    db.block.update({_id: block._id}, block);
+                }
+            });
+        '));
+
+        $this->write(' + updating medias in block attributes');
+
+        $configMediaFieldType = $this->container->getParameter('open_orchestra_migration.media_configuration');
+
+        $this->checkExecute($db->execute(
+            $this->getJSFunctions() . '
+
+            var blockMediaFieldAttribute = '.json_encode($configMediaFieldType['block_media_field_attribute']).';
+            db.block.find({}).forEach(function(block) {
+                var updated = false;
+                for (var attributeName in block.attributes) {
+                    if (
+                        block.attributes.hasOwnProperty(attributeName) &&
+                        blockMediaFieldAttribute.indexOf(attributeName) > -1
+                    ) {
+                        var alt = "";
+                        if (
+                            null !== block.attributes[attributeName].id &
+                            "" !== block.attributes[attributeName].id
+                        ) {
+                           alt = getMediaAlt(block.attributes[attributeName].id, block.language);
+                        }
+                        block.attributes[attributeName].alt = alt;
+                        block.attributes[attributeName].alt.legend = "";
+                        updated = true;
                     }
                 }
 
@@ -129,22 +164,27 @@ class Version20170307181737 extends AbstractMigrationContentNode
     protected function updateMediaInContent(Database $db)
     {
         $this->write('  + Updating orchestra_media attributes');
-
+        $configMediaFieldType = $this->container->getParameter('open_orchestra_migration.media_configuration');
         $this->checkExecute($db->execute(
             $this->getJSFunctions() . '
-
+            var contentMediaFieldType = '.json_encode($configMediaFieldType['content_media_field_type']).';
             db.content.find({}).forEach(function(content) {
                 var updated = false;
 
                 for (var attributeName in content.attributes) {
                     if (
                         content.attributes.hasOwnProperty(attributeName) &&
-                        "orchestra_media" == content.attributes[attributeName].type &&
-                        content.attributes[attributeName].hasOwnProperty("value") &&
-                        null !== content.attributes[attributeName].value.id &&
-                        "" !== content.attributes[attributeName].value.id
+                        contentMediaFieldType.indexOf(content.attributes[attributeName].type) > -1 &&
+                        content.attributes[attributeName].hasOwnProperty("value")
                     ) {
-                        content.attributes[attributeName].value.alt = getMediaAlt(content.attributes[attributeName].value.id, content.language);
+                        var alt = "";
+                        if (
+                            null !== content.attributes[attributeName].value.id &
+                            "" !== content.attributes[attributeName].value.id
+                        ) {
+                            alt = getMediaAlt(content.attributes[attributeName].value.id, content.language);
+                        }
+                        content.attributes[attributeName].value.alt = alt;
                         content.attributes[attributeName].value.legend = "";
                         updated = true;
                     }
@@ -153,6 +193,7 @@ class Version20170307181737 extends AbstractMigrationContentNode
                 if (updated) {
                     db.content.update({_id: content._id}, content);
                 }
+
             });
         '));
     }
