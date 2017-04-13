@@ -93,7 +93,7 @@ class Version20170307181737 extends AbstractMigrationContentNode
                            alt = getMediaAlt(block.attributes[attributeName].id, block.language);
                         }
                         block.attributes[attributeName].alt = alt;
-                        block.attributes[attributeName].alt.legend = "";
+                        block.attributes[attributeName].legend = "";
                         updated = true;
                     }
                 }
