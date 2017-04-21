@@ -469,7 +469,7 @@ class Version20170216094244 extends AbstractMigrationContentNode
             var offlineStatus = db.status.findOne({"autoUnpublishToState": true});
             if (typeof offlineStatus !== "undefined") {
                 db.node.find({"status.publishedState": true}).forEach(function(item) {
-                    var lastPublished = db.node.find({"status.publishedState": true, "language": item.language, "siteId": item.siteId, "nodeId": item.nodeId}).sort({"version": -1}).limit(1).toArray()[0];
+                    var lastPublished = db.node.find({"currentlyPublished": true, "language": item.language, "siteId": item.siteId, "nodeId": item.nodeId}).sort({"version": -1}).limit(1).toArray()[0];
                     if (lastPublished._id.str != item._id.str) {
                         item.status = offlineStatus;
                         db.node.update({ _id: item._id }, item);
