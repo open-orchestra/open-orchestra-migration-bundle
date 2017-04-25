@@ -2,7 +2,6 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
@@ -32,7 +31,7 @@ class Version20170216094224 extends AbstractMigration implements ContainerAwareI
 
         $this->write(' + Move metaIndex and metaFollow properties in alias');
         $db->execute('
-            db.site.find().forEach(function(item) {
+            db.site.find().snapshot().forEach(function(item) {
                 var aliases = item.aliases;
                 for (var i in aliases) {
                     var alias = aliases[i];
@@ -48,7 +47,7 @@ class Version20170216094224 extends AbstractMigration implements ContainerAwareI
 
         $db->execute('
             var configTemplate = '.json_encode($configTemplate).';
-            db.site.find().forEach(function(item) {
+            db.site.find().snapshot().forEach(function(item) {
                 var templateSet = configTemplate["defaultTemplateSet"];
                 var templateNodeRoot = configTemplate["defaultTemplateNodeRoot"];
                 var siteId = item.siteId;
@@ -66,7 +65,7 @@ class Version20170216094224 extends AbstractMigration implements ContainerAwareI
 
         $this->write(' + Remove properties metaKeywords, theme');
         $db->execute('
-            db.site.find().forEach(function(item) {
+            db.site.find().snapshot().forEach(function(item) {
                  if (item.metaKeywords) {
                     delete item.metaKeywords;
                  }

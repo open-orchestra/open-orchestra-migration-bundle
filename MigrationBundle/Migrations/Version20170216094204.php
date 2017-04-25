@@ -2,7 +2,6 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 
 /**
@@ -26,22 +25,22 @@ class Version20170216094204 extends AbstractMigration
         $db->execute('
             db.user.update({} , {$unset: {locked: "" , expired: "", credentialsExpired: ""}}, {multi: true});
             db.user.update({}, {$set: {languageBySites: [], editAllowed: false}}, {multi: true});
-            db.user.find({"roles.0": "ROLE_SUPER_ADMIN"}).forEach(function(user) {
+            db.user.find({"roles.0": "ROLE_SUPER_ADMIN"}).snapshot().forEach(function(user) {
                 user.roles = {"0": "ROLE_DEVELOPER"};
                 db.user.update({_id: user._id}, user);
             });
-            db.user.find({"roles.0": {$ne: "ROLE_DEVELOPER"}}).forEach(function(user) {
+            db.user.find({"roles.0": {$ne: "ROLE_DEVELOPER"}}).snapshot().forEach(function(user) {
                 user.roles = [];
                 db.user.update({_id: user._id}, user);
             });
             db.users_group.update({} , {$unset: {modelRoles: "" }}, {multi: true});
             db.users_group.update({}, {$set: {workflowProfileCollections: {}, perimeters: {}, deleted: false, roles: []}}, {multi: true});
-            db.users_group.find({"site": {$exists: false}}).forEach(function(users_group) {
+            db.users_group.find({"site": {$exists: false}}).snapshot().forEach(function(users_group) {
                 var new_users_groups = [];
                 var users_group_name = users_group.name;
                 var users_group_id = users_group._id;
                 var insert = true;
-                db.site.find({"deleted": false}).forEach(function(site) {
+                db.site.find({"deleted": false}).snapshot().forEach(function(site) {
                     users_group.site = new DBRef("site", site._id);
                     if (insert) {
                         db.users_group.update({_id: users_group._id}, users_group);
@@ -53,7 +52,7 @@ class Version20170216094204 extends AbstractMigration
                         new_users_groups.push(new DBRef("users_group", users_group._id));
                     }
                 });
-                db.user.find({"groups": {$exists: true}}).forEach(function(user) {
+                db.user.find({"groups": {$exists: true}}).snapshot().forEach(function(user) {
                     for (var i in user.groups) {
                         if (user.groups[i].$id == users_group_id.str) {
                             user.groups = user.groups.concat(new_users_groups);

@@ -2,7 +2,6 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 use Doctrine\ODM\MongoDB\DocumentManager;
 use OpenOrchestra\Backoffice\Reference\ReferenceManager;

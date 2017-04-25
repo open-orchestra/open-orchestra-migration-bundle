@@ -48,7 +48,7 @@ class Version20170220121000 extends AbstractMigrationContentNode
     protected function upRemoveUnusedProperties(Database $db)
     {
         return $db->execute('
-            db.content.find().forEach(function(item) {
+            db.content.find().snapshot().forEach(function(item) {
                  if (item.currentlyPublished) {
                     delete item.currentlyPublished;
                  }
@@ -80,7 +80,7 @@ class Version20170220121000 extends AbstractMigrationContentNode
         return $db->execute('
             var offlineStatus = db.status.findOne({"autoUnpublishToState": true});
             if (typeof offlineStatus !== "undefined") {
-                db.content.find({"status.publishedState": true}).forEach(function(item) {
+                db.content.find({"status.publishedState": true}).snapshot().forEach(function(item) {
                     var lastPublished = db.content.find({"status.publishedState": true, "language": item.language, "contentId": item.contentId}).sort({"version": -1}).limit(1).toArray()[0];
                     if (lastPublished._id.str != item._id.str) {
                         item.status = offlineStatus;

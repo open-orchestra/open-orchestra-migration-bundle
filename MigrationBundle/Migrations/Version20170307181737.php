@@ -2,7 +2,6 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 use OpenOrchestra\MediaAdmin\FolderEvents;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
@@ -49,7 +48,7 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         $this->checkExecute($db->execute(
             $this->getJSFunctions() . '
 
-            db.block.find({}).forEach(function(block) {
+            db.block.find({}).snapshot().forEach(function(block) {
                 var updated = false;
 
                 for (var attributeName in block.attributes) {
@@ -80,7 +79,7 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
             $this->getJSFunctions() . '
 
             var blockMediaFieldAttribute = '.json_encode($configMediaFieldType['block_media_field_attribute']).';
-            db.block.find({}).forEach(function(block) {
+            db.block.find({}).snapshot().forEach(function(block) {
                 var updated = false;
                 for (var attributeName in block.attributes) {
                     if (
@@ -133,7 +132,7 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         $this->checkExecute($db->execute(
             $this->getJSFunctions() . '
 
-            db.content.find({}).forEach(function(content) {
+            db.content.find({}).snapshot().forEach(function(content) {
                 var updated = false;
 
                 for (var attributeName in content.attributes) {
@@ -170,7 +169,7 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         $this->checkExecute($db->execute(
             $this->getJSFunctions() . '
             var contentMediaFieldType = '.json_encode($configMediaFieldType['content_media_field_type']).';
-            db.content.find({}).forEach(function(content) {
+            db.content.find({}).snapshot().forEach(function(content) {
                 var updated = false;
 
                 for (var attributeName in content.attributes) {
@@ -240,7 +239,7 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         $this->write('  + Adding folderId');
 
         $this->checkExecute($db->execute('
-            db.folder.find({}).forEach(function(folder) {
+            db.folder.find({}).snapshot().forEach(function(folder) {
                 folder.folderId = folder._id.str;
                 db.folder.update({_id: folder._id}, folder);
             });

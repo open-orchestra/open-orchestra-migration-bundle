@@ -2,7 +2,6 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
@@ -23,7 +22,7 @@ abstract class AbstractMigrationContentNode extends AbstractMigration implements
     protected function upVersionName(Database $db, $collection)
     {
         return $db->execute('
-            db.'.$collection.'.find().forEach(function(item) {
+            db.'.$collection.'.find().snapshot().forEach(function(item) {
                 var date = item.createdAt.getUTCFullYear()+"-"+item.createdAt.getUTCMonth()+"-"+item.createdAt.getUTCDate();
                 var time = item.createdAt.getHours()+":"+item.createdAt.getMinutes()+":"+item.createdAt.getSeconds();
                 item.versionName = item.name + "_" + date + "_" + time;
