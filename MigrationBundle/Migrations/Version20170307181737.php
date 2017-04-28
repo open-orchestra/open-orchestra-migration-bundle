@@ -257,6 +257,7 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         $rootFolders = $this->container->get('open_orchestra_media.repository.media_folder')->findBy(array('parent' => null));
         foreach ($rootFolders as $folder) {
             $oldPath = $folder->getPath();
+            $folder->setPath('/');
             $event = $this->container->get('open_orchestra_media_admin.event.folder_event.factory')->createFolderEvent();
             $event->setFolder($folder);
             $event->setPreviousPath($oldPath);
