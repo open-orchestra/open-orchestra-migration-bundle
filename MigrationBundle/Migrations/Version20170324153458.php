@@ -2,7 +2,6 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 
 /**
@@ -24,7 +23,7 @@ class Version20170324153458 extends AbstractMigration
     public function up(Database $db)
     {
         $db->execute('
-            db.media.find({}).forEach(function(media) {
+            db.media.find({}).snapshot().forEach(function(media) {
                 var folderId = media.mediaFolder.getId();
                 var folder = db.folder.findOne({_id: folderId});
                 if (folder !== null) {

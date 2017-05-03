@@ -207,7 +207,7 @@ class Version20170216094244 extends AbstractMigrationContentNode
             var templateSetConfig = '.json_encode($templateSetConfig).';
             var sharedBlocks = {};
 
-            db.node.find({"nodeType": { $ne: "general"} }).forEach(function(item) {
+            db.node.find({"nodeType": { $ne: "general"} }).snapshot().forEach(function(item) {
                 var site = db.site.findOne({"siteId": item.siteId});
                 var templateSet = site.templateSet;
 
@@ -383,7 +383,7 @@ class Version20170216094244 extends AbstractMigrationContentNode
     {
         return $db->execute('
             var configTemplate = '.json_encode($configTemplate).';
-            db.node.find().forEach(function(item) {
+            db.node.find().snapshot().forEach(function(item) {
                 var template = configTemplate.defaultTemplate;
                 for (var i in configTemplate.specificTemplate) {
                     if (
@@ -409,7 +409,7 @@ class Version20170216094244 extends AbstractMigrationContentNode
     protected function upPathErrorNode(Database $db)
     {
         return $db->execute('
-            db.node.find({"nodeType": "error"}).forEach(function(item) {
+            db.node.find({"nodeType": "error"}).snapshot().forEach(function(item) {
                 item.parentId = "-";
                 item.path = item.nodeId;
                 item.order = -1;
@@ -427,7 +427,7 @@ class Version20170216094244 extends AbstractMigrationContentNode
     protected function upRemoveUnusedProperties(Database $db)
     {
         return $db->execute('
-            db.node.find().forEach(function(item) {
+            db.node.find().snapshot().forEach(function(item) {
                  if (item.boLabel) {
                     delete item.boLabel;
                  }
@@ -468,7 +468,7 @@ class Version20170216094244 extends AbstractMigrationContentNode
         return $db->execute('
             var offlineStatus = db.status.findOne({"autoUnpublishToState": true});
             if (typeof offlineStatus !== "undefined") {
-                db.node.find({"status.publishedState": true}).forEach(function(item) {
+                db.node.find({"status.publishedState": true}).snapshot().forEach(function(item) {
                     var lastPublished = db.node.find({"currentlyPublished": true, "language": item.language, "siteId": item.siteId, "nodeId": item.nodeId}).sort({"version": -1}).limit(1).toArray()[0];
                     if (lastPublished._id.str != item._id.str) {
                         item.status = offlineStatus;

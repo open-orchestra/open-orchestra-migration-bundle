@@ -2,7 +2,6 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
@@ -88,7 +87,7 @@ class Version20170216094214 extends AbstractMigration implements ContainerAwareI
 
         $this->write(' + Update embedded status in node and content');
         $db->execute('
-            db.status.find({}).forEach(function(item) {
+            db.status.find({}).snapshot().forEach(function(item) {
                 db.node.update( {"status._id": item._id}, { $set: { "status": item } }, { multi: true } );
                 db.content.update( {"status._id": item._id}, { $set: { "status": item } }, { multi: true } );
             });

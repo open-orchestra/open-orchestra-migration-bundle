@@ -2,7 +2,6 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 
 /**
@@ -31,7 +30,7 @@ class Version20170321150342 extends AbstractMigration
 
         $this->write(' + Adding property descriptions');
         $db->execute('
-            db.workflow_profile.find().forEach(function(item) {
+            db.workflow_profile.find().snapshot().forEach(function(item) {
                 var labels = item.labels;
                 var descriptions = {};
                 for (var i in labels) {
@@ -49,7 +48,7 @@ class Version20170321150342 extends AbstractMigration
 
         $this->write(' + Remove properties createdAt, updatedAt, roles');
         $db->execute('
-            db.workflow_profile.find().forEach(function(item) {
+            db.workflow_profile.find().snapshot().forEach(function(item) {
                  if (item.createdAt) {
                     delete item.createdAt;
                  }
