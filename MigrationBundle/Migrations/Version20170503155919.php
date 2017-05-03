@@ -5,7 +5,7 @@ namespace OpenOrchestra\MigrationBundle\Migrations;
 use Doctrine\MongoDB\Database;
 
 /**
- * Auto-generated Migration: Please modify to your needs!
+ * @package OpenOrchestra\MigrationBundle\Migrations
  */
 class Version20170503155919 extends AbstractMigration
 {
