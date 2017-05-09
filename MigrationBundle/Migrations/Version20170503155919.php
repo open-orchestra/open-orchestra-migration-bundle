@@ -24,7 +24,7 @@ class Version20170503155919 extends AbstractMigration
     {
         $db->execute('
             var distinctItemIds = [];
-            db.trash_item.find({}).snapshot().forEach(function(media) {
+            db.trash_item.find({}).snapshot().forEach(function(item) {
                 var entity = db[item.entity.getCollection()].findOne({_id: item.entity.getId()});
                 if (null !== entity) {
                     item.siteId = entity.siteId;
