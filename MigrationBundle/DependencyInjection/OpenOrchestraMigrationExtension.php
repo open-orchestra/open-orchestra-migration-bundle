@@ -22,6 +22,7 @@ class OpenOrchestraMigrationExtension extends Extension
 
         $container->setParameter('open_orchestra_migration.node_configuration', $config['node_configuration']);
         $container->setParameter('open_orchestra_migration.site_configuration', $config['site_configuration']);
+        $container->setParameter('open_orchestra_migration.site_alias', $config['site_alias']);
         $container->setParameter('open_orchestra_migration.media_configuration', $config['media_configuration']);
     }
 }
