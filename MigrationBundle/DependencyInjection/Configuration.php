@@ -84,8 +84,21 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+            ->end()
+            ->arrayNode('site_alias')->addDefaultsIfNotSet()
+                ->children()
+                    ->arrayNode('collections')
+                    ->prototype('scalar')->end()
+                    ->defaultValue(array(
+                        'block',
+                        'content',
+                        'folder',
+                        'media',
+                        'node',
+                        'redirection',
+                        'route_document'))->end()
+                ->end()
             ->end();
-
         return $treeBuilder;
     }
 }
