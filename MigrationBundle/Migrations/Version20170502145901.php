@@ -2,7 +2,6 @@
 
 namespace OpenOrchestra\MigrationBundle\Migrations;
 
-use AntiMattr\MongoDB\Migrations\AbstractMigration;
 use Doctrine\MongoDB\Database;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
@@ -29,7 +28,6 @@ class Version20170502145901 extends AbstractMigration implements ContainerAwareI
     {
 
         $configSiteAliasMigration = $this->container->getParameter('open_orchestra_migration.site_alias');
-        $collections = $configSiteAliasMigration['collections'];
 
         $results = $db->execute('
             var collections = '. json_encode($configSiteAliasMigration['collections']) . ';

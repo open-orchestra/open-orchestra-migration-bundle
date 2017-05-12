@@ -85,12 +85,10 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
             ->end()
-
-
             ->arrayNode('site_alias')->addDefaultsIfNotSet()
                 ->children()
                     ->arrayNode('collections')
-                    ->prototype('array')->end()
+                    ->prototype('scalar')->end()
                     ->defaultValue(array(
                         'block',
                         'content',
