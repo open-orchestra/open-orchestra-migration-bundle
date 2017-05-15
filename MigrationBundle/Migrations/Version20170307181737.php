@@ -277,9 +277,7 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         $this->write('  + Updating folderNames');
 
         $this->checkExecute($db->execute('
-            var backLanguages = ["'
-                . implode('", "', $this->container->getParameter('open_orchestra_base.administration_languages'))
-            . '"];
+            var backLanguages = ' . json_encode($this->container->getParameter('open_orchestra_base.administration_languages')) . ';
 
             db.folder.find({}).snapshot().forEach(function(folder) {
                 var name = folder.name;
