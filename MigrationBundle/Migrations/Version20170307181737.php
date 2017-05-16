@@ -210,6 +210,7 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
 
         $this->createFolderId($db);
         $this->createFolderPath();
+        $this->updateFolderNames($db);
     }
 
     /**
@@ -264,6 +265,32 @@ class Version20170307181737 extends AbstractMigration implements ContainerAwareI
         }
 
         $this->container->get('object_manager')->flush();
+    }
+
+    /**
+     * Internationalize Folder name
+     *
+     * @param Database $db
+     */
+    protected function updateFolderNames(Database $db)
+    {
+        $this->write('  + Updating folderNames');
+
+        $this->checkExecute($db->execute('
+            var backLanguages = ' . json_encode($this->container->getParameter('open_orchestra_base.administration_languages')) . ';
+
+            db.folder.find({}).snapshot().forEach(function(folder) {
+                var name = folder.name;
+
+                folder.names = {};
+                for (var language in backLanguages) {
+                    folder.names[backLanguages[language]] = name;
+                }
+
+                delete folder.name;
+                db.folder.update({_id: folder._id}, folder);
+            });
+        '));
     }
 
     /**
