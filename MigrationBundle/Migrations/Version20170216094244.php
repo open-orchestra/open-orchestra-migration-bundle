@@ -347,7 +347,8 @@ class Version20170216094244 extends AbstractMigrationContentNode
                             "siteId": node.siteId,
                             "attributes": blockProperties.attributes,
                             "createdAt": new Date(),
-                            "updatedAt": new Date()
+                            "updatedAt": new Date(),
+                            "maxAge": blockProperties.maxAge
                         };
                         var writeResult = db.block.insert(block);
                         if (1 == writeResult.nInserted) {
