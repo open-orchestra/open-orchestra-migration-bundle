@@ -61,9 +61,6 @@ class Version20170220121000 extends AbstractMigrationContentNode
                  if (item.status.toRoles) {
                     delete item.status.toRoles;
                  }
-                 if (item.keywords) {
-                    delete item.keywords;
-                 }
 
                  db.content.update({ _id: item._id }, item);
             });
